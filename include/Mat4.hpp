@@ -23,6 +23,7 @@ class Mat4 {
     static Mat4 rotateY(float angle);
     static Mat4 rotateZ(float angle);
     static Mat4 rotateAxis(float x, float y, float z, float angle);
+    static Mat4 translate(float x, float y, float z);
 
 };
 

@@ -4,19 +4,46 @@
 
 extern int useTexture;
 
+// ---------------- Object transform ----------------
+struct Transform {
+    float x = 0.0f;
+    float y = 0.0f;
+    float z = 0.0f;
+};
 
-// ---------------- Callback ----------------
+// ---------------- Callbacks ----------------
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    (void)window; (void)scancode; (void)mods;
+    (void) mods;
+    (void) scancode;
+    Transform* transform = static_cast<Transform*>(glfwGetWindowUserPointer(window));
+    if (!transform) return;
+    if(action != GLFW_PRESS && action != GLFW_REPEAT) return;
 
-    if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
-        useTexture = !useTexture;
-        printf("Swapping grey and texture: %s\n", useTexture ? "Texture" : "Greyscale");
-        fflush(stdout);
+    float step = 0.1f;
+    switch(key){
+        case GLFW_KEY_SPACE:
+            useTexture = !useTexture;
+            printf("Swapping grey and texture: %s\n", useTexture ? "Texture" : "Greyscale");
+            fflush(stdout);
+            break;
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window, GLFW_TRUE);
+            break;
+        case GLFW_KEY_LEFT:  transform->x -= step; break;
+        case GLFW_KEY_RIGHT: transform->x += step; break;
+        case GLFW_KEY_UP:    transform->y += step; break;
+        case GLFW_KEY_DOWN:  transform->y -= step; break;
     }
-    if (action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
+}
+
+void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+
+    (void) xoffset;
+    Transform* transform = static_cast<Transform*>(glfwGetWindowUserPointer(window));
+    if (!transform) return;
+
+    float step = 0.2f;
+    transform->z += (float)yoffset * step;
 }
 
 // ---------------- Texture loading ----------------
@@ -74,8 +101,6 @@ GLFWwindow* initWindow(int width, int height, const char* title) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
-    glfwSetKeyCallback(win, keyCallback);
-
     return win;
 }
 
@@ -99,16 +124,19 @@ void setupMeshBuffers(const std::vector<float> &interleaved, GLuint &vao, GLuint
     // UV
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
     glEnableVertexAttribArray(2);
-
 }
-
 
 // ---------------- Main render loop ----------------
 void renderLoop(GLFWwindow* win, GLuint vao, size_t vertexCount, GLuint program, GLuint texID,
                 GLint mvpLoc, GLint modelLoc, GLint useTexLoc, GLint texLoc,
-                Mat4 vp) {
+                Mat4 vp) 
+{
 
     (void) program;
+    Transform objPos;
+    glfwSetWindowUserPointer(win, &objPos);
+    glfwSetKeyCallback(win, keyCallback);
+    glfwSetScrollCallback(win, scrollCallback);
 
     float angle = 0.0f;
 
@@ -116,7 +144,11 @@ void renderLoop(GLFWwindow* win, GLuint vao, size_t vertexCount, GLuint program,
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         angle += 0.3f*(3.14159f/180.0f);
-        Mat4 model = Mat4::rotateY(angle*0.4f);
+
+        // Translation + rotation
+        Mat4 translation = Mat4::translate(objPos.x, objPos.y, objPos.z);
+        Mat4 rotation = Mat4::rotateY(angle*2.0f);
+        Mat4 model = Mat4::multiply(translation, rotation);
         Mat4 mvp = Mat4::multiply(vp, model);
 
         glUniformMatrix4fv(mvpLoc,1,GL_FALSE,mvp.m);

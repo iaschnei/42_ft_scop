@@ -158,3 +158,11 @@ Mat4 Mat4::rotateAxis(float x, float y, float z, float angle) {
 
     return r;
 }
+
+Mat4 Mat4::translate(float x, float y, float z) {
+    Mat4 r = identity();
+    r.m[12] = x;
+    r.m[13] = y;
+    r.m[14] = z;
+    return r;
+}
