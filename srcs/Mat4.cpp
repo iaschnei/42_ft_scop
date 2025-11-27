@@ -1,6 +1,5 @@
 #include <cmath>
-
-#include "./Mat4.hpp"
+#include "../include/Mat4.hpp"
 
 // Default status of our matrix, like this : 
 //
@@ -89,5 +88,73 @@ Mat4 Mat4::lookAt(float eyeX, float eyeY, float eyeZ,
     r.m[14] =  (fX*eyeX + fY*eyeY + fZ*eyeZ);
 
     // Return the new view
+    return r;
+}
+
+Mat4 Mat4::rotateX(float a) {
+    float c = cosf(a);
+    float s = sinf(a);
+
+    Mat4 r = identity();
+
+    r.m[5]  = c;
+    r.m[6]  = s;
+    r.m[9]  = -s;
+    r.m[10] = c;
+
+    return r;
+}
+
+Mat4 Mat4::rotateY(float a) {
+    float c = cosf(a);
+    float s = sinf(a);
+
+    Mat4 r = identity();
+
+    r.m[0]  = c;
+    r.m[2]  = -s;
+    r.m[8]  = s;
+    r.m[10] = c;
+
+    return r;
+}
+
+Mat4 Mat4::rotateZ(float a) {
+    float c = cosf(a);
+    float s = sinf(a);
+
+    Mat4 r = identity();
+
+    r.m[0] = c;
+    r.m[1] = s;
+    r.m[4] = -s;
+    r.m[5] = c;
+
+    return r;
+}
+
+Mat4 Mat4::rotateAxis(float x, float y, float z, float angle) {
+    float len = sqrtf(x*x + y*y + z*z);
+    if (len == 0.0f) return identity();
+    x /= len; y /= len; z /= len;
+
+    float c = cosf(angle);
+    float s = sinf(angle);
+    float ic = 1.0f - c;
+
+    Mat4 r = identity();
+
+    r.m[0] = c + x*x*ic;
+    r.m[4] = x*y*ic - z*s;
+    r.m[8] = x*z*ic + y*s;
+
+    r.m[1] = y*x*ic + z*s;
+    r.m[5] = c + y*y*ic;
+    r.m[9] = y*z*ic - x*s;
+
+    r.m[2] = z*x*ic - y*s;
+    r.m[6] = z*y*ic + x*s;
+    r.m[10] = c + z*z*ic;
+
     return r;
 }

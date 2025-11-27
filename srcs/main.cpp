@@ -1,90 +1,69 @@
-#include <GL/glew.h>
-
-#include <GLFW/glfw3.h>
-GLFWwindow* window;
-
-#include <GL/gl.h>
-#include <cstdio>
-#include <cstdlib>
-
-#include "./Mat4.hpp"
-#include "./include.hpp"
-
-const char *vertexShaderSrc = R"(
-#version 330 core
-layout(location = 0) in vec3 position;
-uniform mat4 MVP;
-void main() {
-    gl_Position = MVP * vec4(position, 1.0);
-}
-)";
-
-const char *fragmentShaderSrc = R"(
-#version 330 core
-out vec3 color;
-void main() {
-    color = vec3(1, 0, 0); // red
-}
-)";
+#include "../include/include.hpp"
 
 
+// ---------------- Globals ----------------
+bool useTexture = false;   // toggle between greyscale and texture
+GLuint texID = 0;          // texture ID
 
-int main(void) {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+// ---------------- Main ----------------
+int main(int argc, char** argv) {
+    if(argc < 2){
+        printf("Usage: %s model.obj\n", argv[0]);
+        return -1;
+    }
+    std::string objPath = argv[1];
 
-    GLFWwindow* win = glfwCreateWindow(800, 600, "Manual MVP", NULL, NULL);
-    glfwMakeContextCurrent(win);
+    // Initialize window
+    GLFWwindow* win = initWindow(800, 600, "ft_scop-iaschnei");
+    if(!win) return -1;
 
-    glewExperimental = GL_TRUE;
-    glewInit();
+    // Load mesh
+    Mesh mesh;
+    if(!loadOBJ(objPath, mesh)){
+        printf("Failed to load OBJ: %s\n", objPath.c_str());
+        return -1;
+    }
+    printf("Loaded OBJ: %s (%zu vertices)\n", objPath.c_str(), mesh.vertices.size()/3);
 
-    glClearColor(0, 0, 0.4f, 1);
+    if(mesh.normals.empty()){
+        printf("No normals found. Generating normals...\n");
+        generateNormals(mesh);
+    }
 
-    // Triangle
-    float verts[] = {
-        -1, -1, 0,
-         1, -1, 0,
-         0,  1, 0
-    };
+    // Compute center and scale
+    float cx, cy, cz, scale;
+    computeCenterScale(mesh, cx, cy, cz, scale);
 
+    // Interleave vertex data
+    std::vector<float> interleaved = interleaveMesh(mesh, cx, cy, cz, scale);
+
+    // Setup VAO/VBO
     GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    setupMeshBuffers(interleaved, vao, vbo);
 
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(0);
-
+    // Load shaders
     GLuint program = createProgram(vertexShaderSrc, fragmentShaderSrc);
     glUseProgram(program);
 
-    GLint mvpLoc = glGetUniformLocation(program, "MVP");
+    GLint mvpLoc = glGetUniformLocation(program,"MVP");
+    GLint modelLoc = glGetUniformLocation(program,"Model");
+    GLint useTexLoc = glGetUniformLocation(program,"useTexture");
+    GLint texLoc = glGetUniformLocation(program,"tex");
+    GLint texScaleLoc = glGetUniformLocation(program, "textureScale");
 
-    // Build matrices manually
+    // Load texture
+    texID = loadTexture("ressources/texture.png");
+    glUniform1f(texScaleLoc, 5.0f);
+
+    // Setup matrices
     Mat4 proj = Mat4::perspective(3.14159f/4.0f, 800.0f/600.0f, 0.1f, 100.0f);
-    Mat4 view = Mat4::lookAt(4,3,3, 0,0,0, 0,1,0);
-    Mat4 model = Mat4::identity();
+    float camDist = 4.0f;
+    Mat4 view = Mat4::lookAt(camDist, camDist*0.6f, camDist, 0,0,0, 0,1,0);
     Mat4 vp = Mat4::multiply(proj, view);
-    Mat4 mvp = Mat4::multiply(vp, model);
 
-    while (!glfwWindowShouldClose(win)) {
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glUseProgram(program);
-        glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, mvp.m);
-
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-
-        glfwSwapBuffers(win);
-        glfwPollEvents();
-    }
+    // Start render loop
+    renderLoop(win, vao, mesh.vertices.size()/3, program, texID,
+               mvpLoc, modelLoc, useTexLoc, texLoc, vp);
 
     glDeleteProgram(program);
     glfwTerminate();

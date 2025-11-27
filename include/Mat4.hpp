@@ -19,6 +19,11 @@ class Mat4 {
     static Mat4 lookAt(float eyeX, float eyeY, float eyeZ,
             float cx, float cy, float cz,
             float upX, float upY, float upZ);
+    static Mat4 rotateX(float angle);
+    static Mat4 rotateY(float angle);
+    static Mat4 rotateZ(float angle);
+    static Mat4 rotateAxis(float x, float y, float z, float angle);
+
 };
 
 

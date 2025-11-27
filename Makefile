@@ -1,6 +1,7 @@
 # ---------------------------------------------------------------------------- #
 
-SRCS		=	srcs/main.cpp srcs/Mat4.cpp srcs/shaders.cpp
+SRCS		=	srcs/main.cpp srcs/Mat4.cpp srcs/shaders.cpp srcs/parsing.cpp \
+				srcs/render.cpp srcs/mesh_loader.cpp
 
 # ---------------------------------------------------------------------------- #
 

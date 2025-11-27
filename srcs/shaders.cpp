@@ -1,7 +1,55 @@
-#include <GL/glew.h>
-#include <GL/gl.h>
-#include <cstdio>
-#include <cstdlib>
+#include "../include/include.hpp"
+
+const char *vertexShaderSrc = R"(
+#version 330 core
+
+layout(location = 0) in vec3 position;
+layout(location = 1) in vec3 normal;
+layout(location = 2) in vec2 texCoord; // only if UVs exist
+
+uniform mat4 MVP;
+
+out vec3 vNormal;
+out vec2 vTexCoord;
+
+void main()
+{
+    gl_Position = MVP * vec4(position, 1.0);
+    vNormal = normalize(normal);      // for grayscale
+    vTexCoord = texCoord;             // for texture
+}
+
+)";
+
+const char *fragmentShaderSrc = R"(
+#version 330 core
+
+in vec3 vNormal;
+in vec2 vTexCoord;
+
+out vec4 FragColor;
+
+uniform sampler2D tex;
+uniform bool useTexture;
+
+void main()
+{
+    if(useTexture)
+    {
+        // Display texture color
+        FragColor = texture(tex, vTexCoord);
+    }
+    else
+    {
+        // Simple grayscale from normals
+        vec3 gray = normalize(vNormal) * 0.5 + 0.5; // map -1..1 to 0..1
+        FragColor = vec4(gray, 1.0);
+    }
+}
+
+
+)";
+
 
 GLuint compileShader(const char *source, GLenum type) {
     GLuint id = glCreateShader(type);
