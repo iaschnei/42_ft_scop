@@ -1,6 +1,10 @@
 #include <cmath>
 #include "../include/Mat4.hpp"
 
+// Basically a matrix is a way to transform a 3D point
+// It's just numbers in an array but positioned in a certain way
+// so our GPU knows what to do with the 3D point (rotate, scale, move...)
+
 // Default status of our matrix, like this : 
 //
 // 1 0 0 0

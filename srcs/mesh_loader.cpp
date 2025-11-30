@@ -1,11 +1,10 @@
 #include "../include/include.hpp"
 
-// ---------------- Normal generation ----------------
+// Generate normals (a normal ~= the direction each triangle is facing perpendicularly)
 void generateNormals(Mesh &mesh) {
     size_t vertexCount = mesh.vertices.size() / 3;
-    mesh.normals.resize(mesh.vertices.size(), 0.0f); // initialize
+    mesh.normals.resize(mesh.vertices.size(), 0.0f);
 
-    // Compute face normals for each triangle
     for(size_t i=0; i < vertexCount; i += 3) {
         float* v0 = &mesh.vertices[i*3 + 0];
         float* v1 = &mesh.vertices[(i+1)*3 + 0];
@@ -29,7 +28,7 @@ void generateNormals(Mesh &mesh) {
     }
 }
 
-// ---------------- Compute bounding box and scaling ----------------
+// Find the largest and smallest point of our Mesh so we can scale it down or up to fit in our window
 void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale) {
     float minX=1e9,minY=1e9,minZ=1e9;
     float maxX=-1e9,maxY=-1e9,maxZ=-1e9;
@@ -57,13 +56,14 @@ void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float
     scale = desiredRadius / radius;
 }
 
-// ---------------- Interleave vertex and normal data ----------------
+// Store every relevant data for each vertex in memory in the right order
+// In our case we have 8 size_t value to store : three position (x, y, z), three normals (nx, ny, nz) and u + v (used to apply textures)
 std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz, float scale) {
     size_t vertexCount = mesh.vertices.size()/3;
     std::vector<float> interleaved;
     interleaved.reserve(vertexCount*8); // 3 pos + 3 normal + 2 UV
 
-    // Compute bounding box for UV mapping
+    // Find the max and min 2D size of our mesh so we have the scale of u and v
     float minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
     for(size_t i=0;i<mesh.vertices.size();i+=3){
         float x=(mesh.vertices[i]-cx)*scale;
@@ -85,7 +85,7 @@ std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz
         float ny = mesh.normals[i*3+1];
         float nz = mesh.normals[i*3+2];
 
-        // Generate UVs in XY plane [0,1]
+        // Generate UVs based on our 2D size from earlier
         float u = (x - minX) / dx;
         float v = (y - minY) / dy;
 

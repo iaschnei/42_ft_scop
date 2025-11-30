@@ -1,32 +1,40 @@
 #include "../include/include.hpp"
 
+// Handles each vertex's atribute (pos, normals, uv)
 const char *vertexShaderSrc = R"(
 #version 330 core
 
 layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec2 texCoord; // only if UVs exist
+layout(location = 2) in vec2 texCoord; // = UV
 
 uniform mat4 MVP;
 
 out vec3 vNormal;
 out vec2 vTexCoord;
+out vec3 vColor;
 
 void main()
 {
     gl_Position = MVP * vec4(position, 1.0);
-    vNormal = normalize(normal);      // for grayscale
-    vTexCoord = texCoord;             // for texture
+    int triIndex = gl_VertexID / 3;
+    vColor = vec3(mod(triIndex*0.37,1.0), mod(triIndex*0.91,1.0), mod(triIndex*0.53,1.0));
+    vNormal = normalize(normal);
+    vTexCoord = texCoord;
 }
 
 )";
 
+// Handles the color of each pixel on the screen
 const char *fragmentShaderSrc = R"(
 #version 330 core
 
+// input from the vertex shader
 in vec3 vNormal;
 in vec2 vTexCoord;
+in vec3 vColor;
 
+// Output final color of the pixel
 out vec4 FragColor;
 
 uniform sampler2D tex;
@@ -41,16 +49,15 @@ void main()
     }
     else
     {
-        // Simple grayscale from normals
-        vec3 gray = normalize(vNormal) * 0.5 + 0.5; // map -1..1 to 0..1
-        FragColor = vec4(gray, 1.0);
+        // One color per face
+        FragColor = vec4(vColor, 1.0);
     }
 }
 
 
 )";
 
-
+// Compile the source code of a shader
 GLuint compileShader(const char *source, GLenum type) {
     GLuint id = glCreateShader(type);
     glShaderSource(id, 1, &source, NULL);
@@ -67,7 +74,7 @@ GLuint compileShader(const char *source, GLenum type) {
     return id;
 }
 
-// Combine the vertex shader and the fragment shader together 
+// Combine the vertex shader and the fragment shader together into an OpenGL "program"
 GLuint createProgram(const char *vs, const char *fs) {
     GLuint v = compileShader(vs, GL_VERTEX_SHADER);
     GLuint f = compileShader(fs, GL_FRAGMENT_SHADER);
