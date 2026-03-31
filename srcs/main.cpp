@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
     }
 
     // Calculate the scale of the object so it displays in the center
-    float cx, cy, cz, scale;
-    computeCenterScale(mesh, cx, cy, cz, scale);
+    float cx, cy, cz, scale, dx, dy, dz;
+    computeCenterScale(mesh, cx, cy, cz, scale, dx, dy, dz);
 
     // Store all data for each vertex in succession in memory
     std::vector<float> interleaved = interleaveMesh(mesh, cx, cy, cz, scale);
@@ -42,16 +42,19 @@ int main(int argc, char** argv) {
     GLuint program = createProgram(vertexShaderSrc, fragmentShaderSrc);
     glUseProgram(program);
 
+    // Make the texture repeat itself like tiles
+    // change the float value of glUniform1f to change how often it repeats
+    GLint tilingLoc  = glGetUniformLocation(program, "textureTiling");
+    glUniform1f(tilingLoc, 10.0f);
+
     // Get location of various useful variables in our shader program so we can use them
     GLint mvpLoc = glGetUniformLocation(program,"MVP");
     GLint modelLoc = glGetUniformLocation(program,"Model");
     GLint useTexLoc = glGetUniformLocation(program,"useTexture");
     GLint texLoc = glGetUniformLocation(program,"tex");
-    GLint texScaleLoc = glGetUniformLocation(program, "textureScale");
 
     // Load our texture and scale it 
     texID = loadTexture("ressources/texture.png");
-    glUniform1f(texScaleLoc, 5.0f);
 
     // Setup matrices (more details in Mat4 file)
     Mat4 proj = Mat4::perspective(3.14159f/4.0f, 800.0f/600.0f, 0.1f, 100.0f);

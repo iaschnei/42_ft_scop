@@ -11,7 +11,7 @@ layout(location = 2) in vec2 texCoord; // = UV
 uniform mat4 MVP;
 
 out vec3 vNormal;
-out vec2 vTexCoord;
+out vec3 vWorldPos;
 out vec3 vColor;
 
 void main()
@@ -20,9 +20,8 @@ void main()
     int triIndex = gl_VertexID / 3;
     vColor = vec3(mod(triIndex*0.37,1.0), mod(triIndex*0.91,1.0), mod(triIndex*0.53,1.0));
     vNormal = normalize(normal);
-    vTexCoord = texCoord;
+    vWorldPos =  position;
 }
-
 )";
 
 // Handles the color of each pixel on the screen
@@ -31,7 +30,7 @@ const char *fragmentShaderSrc = R"(
 
 // input from the vertex shader
 in vec3 vNormal;
-in vec2 vTexCoord;
+in vec3 vWorldPos;
 in vec3 vColor;
 
 // Output final color of the pixel
@@ -40,12 +39,31 @@ out vec4 FragColor;
 uniform sampler2D tex;
 uniform bool useTexture;
 
+
+// How many times the texture should tile per world unit
+uniform float textureTiling;
+
 void main()
 {
     if(useTexture)
     {
-        // Display texture color
-        FragColor = texture(tex, vTexCoord);
+        // Compute blend weights from the normal
+        // pow() sharpens the transition: higher = harder edge between projections
+        vec3 weights = pow(abs(vNormal), vec3(8.0));
+        weights /= (weights.x + weights.y + weights.z);
+
+        // Project the world position onto each of the 3 planes, scaled by mesh extents
+        vec2 uvX = vWorldPos.zy * textureTiling;
+        vec2 uvY = vWorldPos.xz * textureTiling;
+        vec2 uvZ = vWorldPos.xy * textureTiling;
+
+        // Sample the texture once per projection axis
+        vec4 colX = texture(tex, uvX);
+        vec4 colY = texture(tex, uvY);
+        vec4 colZ = texture(tex, uvZ);
+
+        // Blend the three samples by their weights
+        FragColor = colX * weights.x + colY * weights.y + colZ * weights.z;
     }
     else
     {

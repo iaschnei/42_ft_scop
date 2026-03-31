@@ -18,7 +18,7 @@
 #include "Mat4.hpp"
 
 void generateNormals(Mesh &mesh);
-void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale);
+void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale, float &dx, float &dy, float &dz);
 std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz, float scale);
 
 GLuint createProgram(const char *vs, const char *fs);
