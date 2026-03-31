@@ -6,7 +6,7 @@
 
 extern int useTexture; // from main.cpp
 
-// Stores an object position
+// Stores the global camera offset (arrow keys + scroll)
 // x, y and z can be modified to change the rendering
 struct Transform {
     float x = 0.0f;
@@ -144,14 +144,13 @@ void setupMeshBuffers(const std::vector<float> &interleaved, GLuint &vao, GLuint
 }
 
 // The main render loop, runs until the program is closed
-void renderLoop(GLFWwindow* win, GLuint vao, size_t vertexCount, GLuint program, GLuint texID,
+void renderLoop(GLFWwindow* win, const std::vector<SceneObject> &objects, GLuint program, GLuint texID,
                 GLint mvpLoc, GLint modelLoc, GLint useTexLoc, GLint texLoc,
-                Mat4 vp) 
+                Mat4 vp)
 {
-
     (void) program;
-    Transform objPos;
-    glfwSetWindowUserPointer(win, &objPos);
+    Transform camOffset;
+    glfwSetWindowUserPointer(win, &camOffset);
     glfwSetKeyCallback(win, keyCallback);
     glfwSetScrollCallback(win, scrollCallback);
 
@@ -160,30 +159,34 @@ void renderLoop(GLFWwindow* win, GLuint vao, size_t vertexCount, GLuint program,
     while(!glfwWindowShouldClose(win)){
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // Defines how fast our object rotates
+        // Defines how fast objects rotate (shared across all objects)
         angle += 0.3f*(3.14159f/180.0f);
 
-        // Apply any translation or rotation to our object, in our case there is always a rotation
-        Mat4 translation = Mat4::translate(objPos.x, objPos.y, objPos.z);
-        Mat4 rotation = Mat4::rotateY(angle*2.0f);
-        Mat4 model = Mat4::multiply(translation, rotation);
-        Mat4 mvp = Mat4::multiply(vp, model);
-
-        // Send our matrices to the GPU
-        glUniformMatrix4fv(mvpLoc,1,GL_FALSE,mvp.m);
-        glUniformMatrix4fv(modelLoc,1,GL_FALSE,model.m);
-
-        // Handle texture display
+        // Bind texture once — all objects share it
         glUniform1i(useTexLoc, useTexture ? 1 : 0);
         if(useTexture && texID != 0){
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, texID);
-            glUniform1i(texLoc,0);
+            glUniform1i(texLoc, 0);
         }
 
-        // Draw the mesh
-        glBindVertexArray(vao);
-        glDrawArrays(GL_TRIANGLES,0,vertexCount);
+        // Draw each object with its own model matrix
+        for(const SceneObject &obj : objects){
+
+            // Each object rotates around its own center, then gets translated to its slot
+            Mat4 rotation    = Mat4::rotateY(angle * 2.0f);
+            Mat4 translation = Mat4::translate(obj.offsetX + camOffset.x, camOffset.y, camOffset.z);
+            Mat4 model       = Mat4::multiply(translation, rotation);
+            Mat4 mvp         = Mat4::multiply(vp, model);
+
+            // Send matrices to the GPU
+            glUniformMatrix4fv(mvpLoc,  1, GL_FALSE, mvp.m);
+            glUniformMatrix4fv(modelLoc,1, GL_FALSE, model.m);
+
+            // Draw this object
+            glBindVertexArray(obj.vao);
+            glDrawArrays(GL_TRIANGLES, 0, obj.vertexCount);
+        }
 
         glfwSwapBuffers(win);
         glfwPollEvents();

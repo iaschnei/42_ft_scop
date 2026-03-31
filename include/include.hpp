@@ -17,6 +17,12 @@
 
 #include "Mat4.hpp"
 
+struct SceneObject {
+    GLuint vao;
+    size_t vertexCount;
+    float  offsetX;
+};
+
 void generateNormals(Mesh &mesh);
 void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale);
 std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz, float scale);
@@ -25,7 +31,7 @@ GLuint createProgram(const char *vs, const char *fs);
 GLuint loadTexture(const char* path);
 GLFWwindow* initWindow(int width, int height, const char* title);
 void setupMeshBuffers(const std::vector<float> &interleaved, GLuint &vao, GLuint &vbo);
-void renderLoop(GLFWwindow* win, GLuint vao, size_t vertexCount, GLuint program, GLuint texID,
+void renderLoop(GLFWwindow* win, const std::vector<SceneObject> &objects, GLuint program, GLuint texID,
                 GLint mvpLoc, GLint modelLoc, GLint useTexLoc, GLint texLoc,
                 Mat4 vp);
 
