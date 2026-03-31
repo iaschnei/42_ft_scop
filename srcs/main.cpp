@@ -26,8 +26,8 @@ int main(int argc, char** argv) {
     }
 
     // Calculate the scale of the object so it displays in the center
-    float cx, cy, cz, scale, dx, dy, dz;
-    computeCenterScale(mesh, cx, cy, cz, scale, dx, dy, dz);
+    float cx, cy, cz, scale;
+    computeCenterScale(mesh, cx, cy, cz, scale);
 
     // Store all data for each vertex in succession in memory
     std::vector<float> interleaved = interleaveMesh(mesh, cx, cy, cz, scale);

@@ -29,7 +29,7 @@ void generateNormals(Mesh &mesh) {
 }
 
 // Find the largest and smallest point of our Mesh so we can scale it down or up to fit in our window
-void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale, float &dx, float &dy, float &dz) {
+void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float &scale) {
     float minX=1e9,minY=1e9,minZ=1e9;
     float maxX=-1e9,maxY=-1e9,maxZ=-1e9;
 
@@ -47,9 +47,9 @@ void computeCenterScale(const Mesh &mesh, float &cx, float &cy, float &cz, float
     cy = (minY+maxY)*0.5f;
     cz = (minZ+maxZ)*0.5f;
 
-    dx = maxX-minX;
-    dy = maxY-minY;
-    dz = maxZ-minZ;
+    float dx = maxX-minX;
+    float dy = maxY-minY;
+    float dz = maxZ-minZ;
     float radius = std::sqrt(dx*dx + dy*dy + dz*dz)*0.5f;
 
     float desiredRadius = 1.5f;
@@ -63,23 +63,6 @@ std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz
     std::vector<float> interleaved;
     interleaved.reserve(vertexCount*8); // 3 pos + 3 normal + 2 UV
 
-    // Find the max and min 2D size of our mesh so we have the scale of u and v
-    float minX=1e9,minY=1e9,minZ=1e9,maxX=-1e9,maxY=-1e9,maxZ=-1e9;
-    for(size_t i=0;i<mesh.vertices.size();i+=3){
-        float x=(mesh.vertices[i]-cx)*scale;
-        float y=(mesh.vertices[i+1]-cy)*scale;
-        float z=(mesh.vertices[i+2]-cz)*scale;
-        if(x<minX) minX=x; 
-        if(x>maxX) maxX=x;
-        if(y<minY) minY=y; 
-        if(y>maxY) maxY=y;
-        if(z<minZ) minZ=z; 
-        if(z>maxZ) maxZ=z;
-    }
-    float dx = maxX - minX;
-    float dy = maxY - minY;
-    float dz = maxZ - minZ;
-
     for(size_t i=0;i<vertexCount;i++){
         float x = (mesh.vertices[i*3+0]-cx)*scale;
         float y = (mesh.vertices[i*3+1]-cy)*scale;
@@ -89,35 +72,9 @@ std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz
         float ny = mesh.normals[i*3+1];
         float nz = mesh.normals[i*3+2];
 
-        // Generate UVs based on the direction of the face
-        // fabs = float absolute value
-        float u, v;
-        float ax = std::fabs(nx);
-        float ay = std::fabs(ny);
-        float az = std::fabs(nz);
-
-        if(ax >= ay && ax >= az){
-            // Face mostly pointing left/right → project onto YZ plane
-            u = (z - minZ) / dz;
-            v = (y - minY) / dy;
-            // Flip u so the texture isn't mirrored on the -X side
-            if(nx > 0.0f) u = 1.0f - u;
-        }
-        else if(ay >= ax && ay >= az){
-            // Face mostly pointing up/down → project onto XZ plane
-            u = (x - minX) / dx;
-            v = (z - minZ) / dz;
-            // Flip v so the texture isn't mirrored on the -Y side
-            if(ny > 0.0f) v = 1.0f - v;
-        }
-        else {
-            // Face mostly pointing front/back → project onto XY plane
-            u = (x - minX) / dx;
-            v = (y - minY) / dy;
-            // Flip u so the texture isn't mirrored on the -Z side
-            if(nz < 0.0f) u = 1.0f - u;
-        }
-
+        // UVs are computed in the fragment shader via triplanar mapping
+        float u = 0.0f;
+        float v = 0.0f;
 
         interleaved.push_back(x); interleaved.push_back(y); interleaved.push_back(z);
         interleaved.push_back(nx); interleaved.push_back(ny); interleaved.push_back(nz);
