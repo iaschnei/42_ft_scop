@@ -39,30 +39,23 @@ out vec4 FragColor;
 uniform sampler2D tex;
 uniform bool useTexture;
 
-
-// How many times the texture should tile per world unit
 uniform float textureTiling;
 
 void main()
 {
     if(useTexture)
     {
-        // Compute blend weights from the normal
-        // pow() sharpens the transition: higher = harder edge between projections
         vec3 weights = pow(abs(vNormal), vec3(8.0));
         weights /= (weights.x + weights.y + weights.z);
 
-        // Project the world position onto each of the 3 planes, scaled by mesh extents
         vec2 uvX = vWorldPos.zy * textureTiling;
         vec2 uvY = vWorldPos.xz * textureTiling;
         vec2 uvZ = vWorldPos.xy * textureTiling;
 
-        // Sample the texture once per projection axis
         vec4 colX = texture(tex, uvX);
         vec4 colY = texture(tex, uvY);
         vec4 colZ = texture(tex, uvZ);
 
-        // Blend the three samples by their weights
         FragColor = colX * weights.x + colY * weights.y + colZ * weights.z;
     }
     else

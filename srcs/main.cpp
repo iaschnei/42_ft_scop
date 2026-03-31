@@ -9,7 +9,6 @@ int main(int argc, char** argv) {
         return -1;
     }
 
-    // Parse 5 objects max
     int objCount = argc - 1;
     if(objCount > 5){
         printf("Warning: max 5 objects supported, ignoring the rest\n");
@@ -21,6 +20,7 @@ int main(int argc, char** argv) {
 
     std::vector<SceneObject> objects;
     float spacing = 4.0f;
+
     for(int i = 0; i < objCount; i++){
         std::string objPath = argv[i + 1];
 
@@ -44,10 +44,12 @@ int main(int argc, char** argv) {
         std::vector<float> interleaved = interleaveMesh(mesh, cx, cy, cz, scale);
 
         // Setup VAO and VBO for this object
+        // VAO = Tells the GPU how to read data in VBO (what data is where)
+        // VBO = Data stored in the GPU memory for all our meshes
         GLuint vao, vbo;
         setupMeshBuffers(interleaved, vao, vbo);
 
-        // Spread objects evenly on the X axis, centered around the origin
+        // Make sure there is enough distance between objects
         float offsetX = i * spacing - (objCount - 1) * spacing / 2.0f;
 
         SceneObject obj;
@@ -62,7 +64,7 @@ int main(int argc, char** argv) {
     glUseProgram(program);
 
     // Make the texture repeat itself like tiles
-    // change the float value of glUniform1f to change how often it repeats
+    // We can change the float value of glUniform1f to change how often it repeats
     GLint tilingLoc = glGetUniformLocation(program, "textureTiling");
     glUniform1f(tilingLoc, 10.0f);
 

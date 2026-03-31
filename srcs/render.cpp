@@ -4,7 +4,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "../include/stb_image.h"
 
-extern int useTexture; // from main.cpp
+extern int useTexture;
 
 // Stores the global camera offset (arrow keys + scroll)
 // x, y and z can be modified to change the rendering
@@ -66,7 +66,6 @@ GLuint loadTexture(const char* path){
 
     int width, height, nrChannels;
 
-    // This actually puts the texture on the right side (don't ask me why)
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(path, &width, &height, &nrChannels, 3);
     if(!data){
@@ -162,7 +161,7 @@ void renderLoop(GLFWwindow* win, const std::vector<SceneObject> &objects, GLuint
         // Defines how fast objects rotate (shared across all objects)
         angle += 0.3f*(3.14159f/180.0f);
 
-        // Bind texture once — all objects share it
+        // Bind texture once, same for all objects
         glUniform1i(useTexLoc, useTexture ? 1 : 0);
         if(useTexture && texID != 0){
             glActiveTexture(GL_TEXTURE0);

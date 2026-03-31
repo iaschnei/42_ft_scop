@@ -78,7 +78,7 @@ bool loadOBJ(const std::string& path, Mesh& outMesh) {
                         sscanf(vert.c_str(), "%d", &vi);
                     }
 
-                    // OBJ indices start at 1 (unlike C++ vectors)
+                    // OBJ indices start at 1
                     vi -= 1;
                     if (ti > 0) ti -= 1;
                     if (ni > 0) ni -= 1;

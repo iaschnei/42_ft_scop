@@ -72,7 +72,7 @@ std::vector<float> interleaveMesh(const Mesh &mesh, float cx, float cy, float cz
         float ny = mesh.normals[i*3+1];
         float nz = mesh.normals[i*3+2];
 
-        // UVs are computed in the fragment shader via triplanar mapping
+        // UVs are computed in the fragment shader
         float u = 0.0f;
         float v = 0.0f;
 
